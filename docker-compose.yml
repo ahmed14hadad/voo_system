@@ -1,0 +1,308 @@
+services:
+
+  zoo:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: zoo
+    hostname: zoo
+    restart: always
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zoo:2888:3888
+    networks:
+      - voo_system
+    mem_limit: 500m
+    cpus: 0.25
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka1
+    hostname: kafka1
+    restart: always
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+      - "29092:29092"
+    environment:
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092,PRIVATE://0.0.0.0:29092
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zoo:2181
+      KAFKA_ADVERTISED_LISTENERS: >
+        INTERNAL://kafka1:19092,
+        EXTERNAL://kafka1:9092,
+        PRIVATE://10.0.4.107:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,PRIVATE:PLAINTEXT
+      KAFKA_LISTENER_NAME_INTERNAL_HOST: kafka1
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_HEAP_OPTS: "-Xms1G -Xmx1G"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    volumes:
+      - ./kafka/kafka1/data:/var/lib/kafka/data
+    depends_on:
+      - zoo
+    networks:
+      - voo_system
+    mem_limit: 1024m
+    cpus: '0.75'
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka2
+    hostname: kafka2
+    restart: always
+    ports:
+      - "9097:9097"
+      - "19097:19097"
+      - "29097:29097"
+    environment:
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19097,EXTERNAL://0.0.0.0:9097,PRIVATE://0.0.0.0:29097
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zoo:2181
+      KAFKA_ADVERTISED_LISTENERS: >
+        INTERNAL://kafka2:19097,
+        EXTERNAL://kafka2:9097,
+        PRIVATE://10.0.4.107:29097
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,PRIVATE:PLAINTEXT
+      KAFKA_LISTENER_NAME_INTERNAL_HOST: kafka2
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_HEAP_OPTS: "-Xms1G -Xmx1G"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    volumes:
+      - ./kafka/kafka2/data:/var/lib/kafka/data
+    depends_on:
+      - zoo
+    networks:
+      - voo_system
+    mem_limit: 1024m
+    cpus: '0.75'
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka3
+    hostname: kafka3
+    restart: always
+    ports:
+      - "9094:9094"
+      - "19094:19094"
+      - "29094:29094"
+    environment:
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19094,EXTERNAL://0.0.0.0:9094,PRIVATE://0.0.0.0:29094
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zoo:2181
+      KAFKA_ADVERTISED_LISTENERS: >
+        INTERNAL://kafka3:19094,
+        EXTERNAL://kafka3:9094,
+        PRIVATE://10.0.4.107:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,PRIVATE:PLAINTEXT
+      KAFKA_LISTENER_NAME_INTERNAL_HOST: kafka3
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_HEAP_OPTS: "-Xms1G -Xmx1G"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    volumes:
+      - ./kafka/kafka3/data:/var/lib/kafka/data
+    depends_on:
+      - zoo
+    networks:
+      - voo_system
+    mem_limit: 1024m
+    cpus: '0.75'
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.1
+    restart: always
+    container_name: kafka-ui
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:19092,kafka2:19097,kafka3:19094
+    volumes:
+      - kafka_ui_data:/etc/kafkaui
+    networks:
+      - voo_system
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter
+    restart: on-failure
+    ports:
+      - "9308:9308"
+    command:
+      - '--kafka.server=kafka1:19092'
+      - '--kafka.server=kafka2:19097'
+      - '--kafka.server=kafka3:19094'
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    networks:
+      - voo_system
+    mem_limit: 300m
+    cpus: '0.1'
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+  #   depends_on:
+  #     - cadvisor
+  #   networks:
+  #     - voo_system
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.15'
+  #         memory: 250M
+
+  # alertmanager:
+  #   image: prom/alertmanager
+  #   container_name: alertmanager
+  #   ports:
+  #     - "9093:9093"
+  #   volumes:
+  #     - ./alertmanager:/etc/alertmanager
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - voo_system
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.1'
+  #         memory: 150M
+
+  # grafana:
+  #   image: grafana/grafana-oss
+  #   container_name: grafana
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #     - ./alertmanager:/etc/alertmanager
+  #     - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+  #     - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+  #   environment:
+  #     - GF_ALERTING_ENABLED=true
+  #     - GF_UNIFIED_ALERTING_ENABLED=true
+  #     - GF_ALERTING_ALERTMANAGER_URL=http://alertmanager:9093
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - voo_system
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.15'
+  #         memory: 250M
+
+  # node_exporter:
+  #   image: prom/node-exporter:latest
+  #   container_name: node_exporter
+  #   ports:
+  #     - "9100:9100"
+  #   networks:
+  #     - voo_system
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.05'
+  #         memory: 100M
+
+  # cadvisor:
+  #   image: gcr.io/cadvisor/cadvisor:latest
+  #   container_name: cadvisor
+  #   restart: always
+  #   privileged: true
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+  #     - /dev/disk/:/dev/disk:ro
+  #   networks:
+  #     - voo_system
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.05'
+  #         memory: 150M
+
+
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - redis_data:/data
+    networks:
+      - voo_system
+    deploy:
+      resources:
+        limits:
+          cpus: '0.40'
+          memory: 400M
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: always
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+    networks:
+      - voo_system
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 300M
+
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: redis_exporter
+    restart: always
+    ports:
+      - "9122:9121"
+    environment:
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - voo_system
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 250M
+
+
+
+
+volumes:
+  grafana-data:
+  kafka_ui_data:
+  redis_data:
+
+networks:
+  voo_system:
+    name: voo_system
+    driver: bridge
+
+    

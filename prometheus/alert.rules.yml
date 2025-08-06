@@ -1,0 +1,109 @@
+groups:
+- name: kafka-alerts
+  rules:
+  - alert: KafkaHighMemoryUsage
+    expr: container_memory_usage_bytes{container="kafka1"} / container_spec_memory_limit_bytes{container="kafka1"} > 0.75
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Kafka1 container memory usage is above 75%"
+      description: "Kafka1 memory usage has exceeded 75% of its limit."
+
+
+
+#   - name: kafka.rules
+#     rules:
+#       - alert: KafkaDown
+#         expr: up{job="kafka-exporter"} == 0
+#         for: 1m
+#         labels:
+#           severity: critical
+#         annotations:
+#           summary: "Kafka Exporter is Down"
+#           description: "Kafka Exporter instance is not responding."
+
+#       - alert: UnderReplicatedPartitions
+#         expr: kafka_cluster_partition_under_replicated{job="kafka-exporter"} > 0
+#         for: 2m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "Kafka under-replicated partitions"
+#           description: "There are {{ $value }} under-replicated Kafka partitions."
+
+#       - alert: HighKafkaLag
+#         expr: kafka_consumergroup_lag > 10000
+#         for: 2m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "High Kafka Consumer Lag"
+#           description: "Kafka lag is too high: {{ $value }}."
+
+#   # - name: redis.rules
+#   #   rules:
+#   #     - alert: RedisDown
+#   #       expr: up{job="redis"} == 0
+#   #       for: 1m
+#   #       labels:
+#   #         severity: critical
+#   #       annotations:
+#   #         summary: "Redis is Down"
+#   #         description: "Redis service is not reachable."
+
+#   #     - alert: HighRedisMemoryUsage
+#   #       expr: redis_memory_used_bytes / redis_total_system_memory_bytes > 0.85
+#   #       for: 2m
+#   #       labels:
+#   #         severity: warning
+#   #       annotations:
+#   #         summary: "Redis Memory Usage High"
+#   #         description: "Redis memory usage above 85%."
+
+#   #     - alert: HighRedisConnections
+#   #       expr: redis_connected_clients > 100
+#   #       for: 2m
+#   #       labels:
+#   #         severity: warning
+#   #       annotations:
+#   #         summary: "High Redis Connections"
+#   #         description: "More than 100 clients connected to Redis."
+
+#   - name: system.rules
+#     rules:
+#       - alert: NodeDown
+#         expr: up{job="node-exporter"} == 0
+#         for: 1m
+#         labels:
+#           severity: critical
+#         annotations:
+#           summary: "Node Exporter Down"
+#           description: "Node Exporter not reachable."
+
+#       - alert: HighCPUUsage
+#         expr: avg(rate(node_cpu_seconds_total{mode="user"}[1m])) by (instance) > 0.85
+#         for: 2m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "High CPU Usage"
+#           description: "CPU usage is above 85% on {{ $labels.instance }}."
+
+#       - alert: HighMemoryUsage
+#         expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+#         for: 2m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "High Memory Usage"
+#           description: "Memory usage is above 85%."
+
+#       - alert: DiskAlmostFull
+#         expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.9
+#         for: 2m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "Disk Almost Full"
+#           description: "Disk usage is above 90%."
